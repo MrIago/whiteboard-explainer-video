@@ -54,7 +54,8 @@ function pcmToWav(pcm, rate = 24000) {
 async function withRetry(label, fn) {
     for (let i = 1; ; i++) {
         try { return await fn() } catch (e) {
-            if (i >= 5) throw new Error(`${label}: ${e.message}`)
+            if (i >= 4) throw new Error(`${label}: ${e.message}`)
+            console.error(`${label}: tentativa ${i} falhou (${e.message}), repetindo`)
             await new Promise((r) => setTimeout(r, 2000 * i))
         }
     }
@@ -65,7 +66,7 @@ async function speak(text, cfg) {
     return withRetry('voz', async () => {
         if (prov.name === 'elevenlabs') {
             const res = await fetch(`${EL}/text-to-speech/${cfg.voice}?output_format=mp3_44100_128`, {
-                method: 'POST', signal: AbortSignal.timeout(90_000),
+                method: 'POST', signal: AbortSignal.timeout(45_000),
                 headers: { 'xi-api-key': prov.key, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, model_id: cfg.model }),
             })
@@ -76,7 +77,7 @@ async function speak(text, cfg) {
         const body = { model: cfg.model, input: text, voice: cfg.voice, response_format: google ? 'pcm' : 'mp3' }
         if (cfg.instructions) body.instructions = cfg.instructions
         const res = await fetch(`${OR}/audio/speech`, {
-            method: 'POST', signal: AbortSignal.timeout(90_000),
+            method: 'POST', signal: AbortSignal.timeout(45_000),
             headers: { Authorization: `Bearer ${prov.key}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         })
@@ -94,13 +95,13 @@ async function words(file) {
             form.append('model_id', 'scribe_v1')
             form.append('timestamps_granularity', 'word')
             form.append('file', new Blob([fs.readFileSync(file)]), path.basename(file))
-            const res = await fetch(`${EL}/speech-to-text`, { method: 'POST', signal: AbortSignal.timeout(90_000), headers: { 'xi-api-key': prov.key }, body: form })
+            const res = await fetch(`${EL}/speech-to-text`, { method: 'POST', signal: AbortSignal.timeout(45_000), headers: { 'xi-api-key': prov.key }, body: form })
             if (!res.ok) throw new Error(`ElevenLabs STT HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`)
             const j = await res.json()
             return j.words.filter((w) => w.type === 'word').map((w) => ({ w: w.text.trim(), s: w.start, e: w.end }))
         }
         const res = await fetch(`${OR}/audio/transcriptions`, {
-            method: 'POST', signal: AbortSignal.timeout(90_000),
+            method: 'POST', signal: AbortSignal.timeout(45_000),
             headers: { Authorization: `Bearer ${prov.key}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: OR_STT,

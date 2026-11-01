@@ -65,6 +65,8 @@ node "$SD/scripts/qa.mjs" scan  <pasta>/out/video.mp4       # segundos parados, 
 node "$SD/scripts/qa.mjs" loud  <pasta>/out/video.mp4       # mire -14 a -16 LUFS, pico até -1 dBTP
 ```
 
+O `scan` mede o que o olho sente: acima de 5% parado, o vídeo parece slide. Corrija antes de entregar, mesmo em teste, com mais peças por frase e chaves de câmera nos detalhes; a respiração da câmera sozinha conta como parado.
+
 Abra as imagens. Não diga que ficou bom sem ter visto a prancha e medido o áudio.
 
 Só use efeito de `useCurrentFrame`: CSS `transition` e `animation` não saem no render.
